@@ -57,7 +57,6 @@ func main() {
 	}
 	var decoded ImagesResponse
 	json.Unmarshal([]byte(bodyText), &decoded)
-	fmt.Printf("%v", decoded.Images)
 	for k, v := range decoded.Images {
 		saveImage(v, k)
 	}
