@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 type ImagesResponse struct {
@@ -38,15 +40,21 @@ func saveImage(url, filename string) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	client := &http.Client{}
-	projectID := "hoge"
+	projectID := os.Getenv("ProjectID")
 	nodeID := "0:2"
 	url := fmt.Sprintf("https://api.figma.com/v1/images/%s?ids=%s&format=jpg", projectID, nodeID)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	req.Header.Set("X-FIGMA-TOKEN", "hoge")
+	figmatoken := os.Getenv("FigmaToken")
+	req.Header.Set("X-FIGMA-TOKEN", figmatoken)
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal(err)
