@@ -162,21 +162,18 @@ func main() {
 		log.Fatal("failed to io read dir: %+v", err)
 	}
 
+	imageUrls := getExportedUrls(projectID, figmaToken, nodeIDs)
+
 	for _, fifo := range fifos {
 		if fifo.IsDir() {
 			continue
 		}
 		splitFileName := strings.Split(fifo.Name(), ".")
 		pureFileName := strings.Join(splitFileName[:len(splitFileName)-1], ".")
-		if _, ok := nodeNameToNodeIdMap[pureFileName]; ok {
-			fmt.Println(fifo.Name())
+
+		if nodeId, ok := nodeNameToNodeIdMap[pureFileName]; ok {
+			imageUrl := imageUrls[nodeId]
+			saveImage(imageUrl, pureFileName)
 		}
-	}
-
-	imageUrls := getExportedUrls(projectID, figmaToken, nodeIDs)
-
-	for nodeId, imageUrl := range imageUrls {
-		fmt.Println(nodeIdToNodeNameMap[nodeId])
-		fmt.Println(imageUrl)
 	}
 }
