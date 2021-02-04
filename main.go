@@ -105,6 +105,39 @@ func getTopNodes(projectId, token string) []FigmaNode {
 	return topNodes
 }
 
+func getExportedUrls(projectId string, token string, nodeIds []string) map[string]string {
+	params := url.Values{}
+	params.Set("ids", strings.Join(nodeIds, ","))
+	params.Set("format", extension)
+	uri := filepath.Join(
+		host, version, "images", projectId,
+	)
+	uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
+
+	client := new(http.Client)
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		log.Fatal("failed to initialize http instance: %+v", err)
+	}
+	req.Header.Set("X-FIGMA-TOKEN", token)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal("failed to http request: %+v", err)
+	}
+
+	bodyText, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal("failed to io read dir: %+v", err)
+	}
+
+	var decoded ImagesResponse
+	if err = json.Unmarshal(bodyText, &decoded); err != nil {
+		log.Fatal("failed to json unmarshal: %+v", err)
+	}
+
+	return decoded.Images
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("failed to read .env file: %+v", err)
@@ -124,25 +157,6 @@ func main() {
 		nodeIDs = append(nodeIDs, node.Id)
 	}
 
-	params := url.Values{}
-	params.Set("ids", strings.Join(nodeIDs, ","))
-	params.Set("format", extension)
-	uri := filepath.Join(
-		host, version, "images", projectID,
-	)
-	uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
-
-	client := new(http.Client)
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		log.Fatal("failed to initialize http instance: %+v", err)
-	}
-	req.Header.Set("X-FIGMA-TOKEN", figmaToken)
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatal("failed to http request: %+v", err)
-	}
-
 	fifos, err := ioutil.ReadDir("images")
 	if err != nil {
 		log.Fatal("failed to io read dir: %+v", err)
@@ -157,17 +171,10 @@ func main() {
 		}
 	}
 
-	bodyText, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal("failed to io read dir: %+v", err)
-	}
+	imageUrls := getExportedUrls(projectID, figmaToken, nodeIDs)
 
-	var decoded ImagesResponse
-	if err = json.Unmarshal(bodyText, &decoded); err != nil {
-		log.Fatal("failed to json unmarshal: %+v", err)
-	}
-
-	for k, v := range decoded.Images {
-		saveImage(v, k)
+	for nodeId, imageUrl := range imageUrls {
+		fmt.Println(frameMap[nodeId])
+		fmt.Println(imageUrl)
 	}
 }
