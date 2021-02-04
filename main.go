@@ -148,12 +148,12 @@ func main() {
 
 	topNodes := getTopNodes(projectID, figmaToken)
 
-	nodeMap := make(map[string]string)  // frameName: nodeID
-	frameMap := make(map[string]string) // nodeID: frameName
+	nodeNameToNodeIdMap := make(map[string]string)
+	nodeIdToNodeNameMap := make(map[string]string) // nodeID: frameName
 	nodeIDs := make([]string, 0)
 	for _, node := range topNodes {
-		nodeMap[node.Name] = node.Id
-		frameMap[node.Id] = node.Name
+		nodeNameToNodeIdMap[node.Name] = node.Id
+		nodeIdToNodeNameMap[node.Id] = node.Name
 		nodeIDs = append(nodeIDs, node.Id)
 	}
 
@@ -166,15 +166,17 @@ func main() {
 		if fifo.IsDir() {
 			continue
 		}
-		if _, ok := frameMap[fifo.Name()]; ok {
-			// processing
+		splitFileName := strings.Split(fifo.Name(), ".")
+		pureFileName := strings.Join(splitFileName[:len(splitFileName)-1], ".")
+		if _, ok := nodeNameToNodeIdMap[pureFileName]; ok {
+			fmt.Println(fifo.Name())
 		}
 	}
 
 	imageUrls := getExportedUrls(projectID, figmaToken, nodeIDs)
 
 	for nodeId, imageUrl := range imageUrls {
-		fmt.Println(frameMap[nodeId])
+		fmt.Println(nodeIdToNodeNameMap[nodeId])
 		fmt.Println(imageUrl)
 	}
 }
