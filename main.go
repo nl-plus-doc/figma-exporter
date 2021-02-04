@@ -152,7 +152,7 @@ func main() {
 		if fifo.IsDir() {
 			continue
 		}
-		if _, ok := frame[fifo.Name()]; ok {
+		if _, ok := frameMap[fifo.Name()]; ok {
 			// processing
 		}
 	}
