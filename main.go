@@ -74,6 +74,29 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to http request: %+v", err)
 	}
+
+	nodeMap := make(map[string]string)  // layerName: nodeID
+	layerMap := make(map[string]string) // nodeID: layerName
+	nodeIDs := make([]string, 0)
+	for ln, ni := range nodeMap {
+		nodeIDs = append(nodeIDs, ni)
+		layerMap[ni] = ln
+	}
+
+	fifos, err := ioutil.ReadDir("images")
+	if err != nil {
+		log.Fatal("failed to io read dir: %+v", err)
+	}
+
+	for _, fifo := range fifos {
+		if fifo.IsDir() {
+			continue
+		}
+		if _, ok := layerMap[fifo.Name()]; ok {
+			// processing
+		}
+	}
+
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal("failed to io read dir: %+v", err)
