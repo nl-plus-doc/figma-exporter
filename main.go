@@ -15,8 +15,8 @@ import (
 
 // ImagesResponse - Figmaのレスポンス
 type ImagesResponse struct {
-	Err    interface{}       `json:"err"`
 	Images map[string]string `json:"images"`
+	Err    interface{}       `json:"err"`
 }
 
 func saveImage(url, filename string) {
