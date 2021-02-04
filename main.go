@@ -27,6 +27,30 @@ type ImagesResponse struct {
 	Err    interface{}       `json:"err"`
 }
 
+// FigmaNode - FigmaのNode
+type FigmaNode struct {
+	Id               string      `json:"id"`
+	Name             string      `json:"name"`
+	Visible          bool        `json:"visible"`
+	Type             string      `json:"type"`
+	PluginData       interface{} `json:"pluginData"`
+	SharedPluginData interface{} `json:"sharedPluginData"`
+	Children         []FigmaNode `json:"children"`
+}
+
+// FigmaFilesResponse - FigmaのFileのレスポンス
+type FigmaFilesResponse struct {
+	Name          string                 `json:"name"`
+	Role          string                 `json:"role"`
+	LastModified  string                 `json:"lastModified"`
+	ThumbnailUrl  string                 `json:"thumbnailUrl"`
+	Version       string                 `json:"version"`
+	Document      FigmaNode              `json:"document"`
+	Components    map[string]interface{} `json:"components"`
+	SchemaVersion int64                  `json:"schemaVersion"`
+	Styles        map[string]interface{} `json:"styles"`
+}
+
 func saveImage(url, filename string) {
 	response, err := http.Get(url)
 	if err != nil {
@@ -47,6 +71,40 @@ func saveImage(url, filename string) {
 	}
 }
 
+func getTopNodes(projectId, token string) []FigmaNode {
+	uri := filepath.Join(
+		host, version, "files", projectId,
+	)
+	uri = "https://" + uri
+
+	client := new(http.Client)
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		log.Fatal("failed to initialize http instance: %+v", err)
+	}
+	req.Header.Set("X-FIGMA-TOKEN", token)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Fatal("failed to http request: %+v", err)
+	}
+	bodyText, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal("failed to io read dir: %+v", err)
+	}
+	var decoded FigmaFilesResponse
+	if err = json.Unmarshal(bodyText, &decoded); err != nil {
+		log.Fatal("failed to json unmarshal: %+v", err)
+	}
+
+	topNodes := make([]FigmaNode, 0)
+	for _, canvas := range decoded.Document.Children {
+		for _, topNode := range canvas.Children {
+			topNodes = append(topNodes, topNode)
+		}
+	}
+	return topNodes
+}
+
 func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("failed to read .env file: %+v", err)
@@ -54,6 +112,8 @@ func main() {
 
 	client := new(http.Client)
 	projectID := os.Getenv("ProjectID")
+	figmaToken := os.Getenv("FigmaToken")
+	getTopNodes(projectID, figmaToken)
 	nodeID := "0:2"
 
 	params := url.Values{}
@@ -68,7 +128,6 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to initialize http instance: %+v", err)
 	}
-	figmaToken := os.Getenv("FigmaToken")
 	req.Header.Set("X-FIGMA-TOKEN", figmaToken)
 	resp, err := client.Do(req)
 	if err != nil {
