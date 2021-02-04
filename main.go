@@ -13,6 +13,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// ImagesResponse - Figmaのレスポンス
 type ImagesResponse struct {
 	Err    interface{}       `json:"err"`
 	Images map[string]string `json:"images"`
