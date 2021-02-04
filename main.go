@@ -110,20 +110,29 @@ func main() {
 		log.Fatalf("failed to read .env file: %+v", err)
 	}
 
-	client := new(http.Client)
 	projectID := os.Getenv("ProjectID")
 	figmaToken := os.Getenv("FigmaToken")
-	getTopNodes(projectID, figmaToken)
-	nodeID := "0:2"
+
+	topNodes := getTopNodes(projectID, figmaToken)
+
+	nodeMap := make(map[string]string)  // frameName: nodeID
+	frameMap := make(map[string]string) // nodeID: frameName
+	nodeIDs := make([]string, 0)
+	for _, node := range topNodes {
+		nodeMap[node.Name] = node.Id
+		frameMap[node.Id] = node.Name
+		nodeIDs = append(nodeIDs, node.Id)
+	}
 
 	params := url.Values{}
-	params.Set("ids", nodeID)
+	params.Set("ids", strings.Join(nodeIDs, ","))
 	params.Set("format", extension)
 	uri := filepath.Join(
 		host, version, "images", projectID,
 	)
 	uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
 
+	client := new(http.Client)
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		log.Fatal("failed to initialize http instance: %+v", err)
@@ -132,14 +141,6 @@ func main() {
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatal("failed to http request: %+v", err)
-	}
-
-	nodeMap := make(map[string]string)  // layerName: nodeID
-	layerMap := make(map[string]string) // nodeID: layerName
-	nodeIDs := make([]string, 0)
-	for ln, ni := range nodeMap {
-		nodeIDs = append(nodeIDs, ni)
-		layerMap[ni] = ln
 	}
 
 	fifos, err := ioutil.ReadDir("images")
@@ -151,7 +152,7 @@ func main() {
 		if fifo.IsDir() {
 			continue
 		}
-		if _, ok := layerMap[fifo.Name()]; ok {
+		if _, ok := frame[fifo.Name()]; ok {
 			// processing
 		}
 	}
