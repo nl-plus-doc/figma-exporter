@@ -51,16 +51,16 @@ type FigmaFilesResponse struct {
 	Styles        map[string]interface{} `json:"styles"`
 }
 
-func saveImage(url, filename string) {
+func saveImage(url, pureFileName, saveDir string) {
 	response, err := http.Get(url)
 	if err != nil {
 		log.Fatalf("failed to http get request: %+v", err)
 	}
 	defer response.Body.Close()
 
-	filename = strings.ReplaceAll(filename, ":", "-")
+	fileName := fmt.Sprintf("%s.%s", pureFileName, extension)
 
-	file, err := os.Create(fmt.Sprintf("%s.%s", filename, extension))
+	file, err := os.Create(filepath.Join(saveDir, fileName))
 	if err != nil {
 		log.Fatalf("failed to file creation: %+v", err)
 	}
@@ -157,7 +157,9 @@ func main() {
 		nodeIDs = append(nodeIDs, node.Id)
 	}
 
-	fifos, err := ioutil.ReadDir("images")
+	saveDir := "images"
+
+	fifos, err := ioutil.ReadDir(saveDir)
 	if err != nil {
 		log.Fatal("failed to io read dir: %+v", err)
 	}
