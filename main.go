@@ -7,10 +7,18 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/joho/godotenv"
+)
+
+const (
+	host      = "api.figma.com"
+	version   = "v1"
+	extension = "jpg"
 )
 
 // ImagesResponse - Figmaのレスポンス
@@ -22,50 +30,60 @@ type ImagesResponse struct {
 func saveImage(url, filename string) {
 	response, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to http get request: %+v", err)
 	}
 	defer response.Body.Close()
 
-	filename = strings.Replace(filename, ":", "-", -1)
+	filename = strings.ReplaceAll(filename, ":", "-")
 
-	file, err := os.Create(filename + ".jpg")
+	file, err := os.Create(fmt.Sprintf("%s.%s", filename, extension))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to file creation: %+v", err)
 	}
 	defer file.Close()
 
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		log.Fatal(err)
+	if _, err = io.Copy(file, response.Body); err != nil {
+		log.Fatalf("failed to io copy: %+v", err)
 	}
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("failed to read .env file: %+v", err)
 	}
 
-	client := &http.Client{}
+	client := new(http.Client)
 	projectID := os.Getenv("ProjectID")
 	nodeID := "0:2"
-	url := fmt.Sprintf("https://api.figma.com/v1/images/%s?ids=%s&format=jpg", projectID, nodeID)
-	req, err := http.NewRequest("GET", url, nil)
+
+	params := url.Values{}
+	params.Set("ids", nodeID)
+	params.Set("format", extension)
+	uri := filepath.Join(
+		host, version, "images", projectID,
+	)
+	uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
+
+	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to initialize http instance: %+v", err)
 	}
-	figmatoken := os.Getenv("FigmaToken")
-	req.Header.Set("X-FIGMA-TOKEN", figmatoken)
+	figmaToken := os.Getenv("FigmaToken")
+	req.Header.Set("X-FIGMA-TOKEN", figmaToken)
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to http request: %+v", err)
 	}
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("failed to io read dir: %+v", err)
 	}
+
 	var decoded ImagesResponse
-	json.Unmarshal([]byte(bodyText), &decoded)
+	if err = json.Unmarshal(bodyText, &decoded); err != nil {
+		log.Fatal("failed to json unmarshal: %+v", err)
+	}
+
 	for k, v := range decoded.Images {
 		saveImage(v, k)
 	}
