@@ -144,8 +144,12 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 
 func main() {
 	var saveDir string
-	flag.StringVar(&saveDir, "dir", "images", "探索する画像ディレクトリ")
+	flag.StringVar(&saveDir, "dir", "", "image directory to search. ex: `-dir images`")
 	flag.Parse()
+
+	if saveDir == "" {
+		log.Fatal("please specify a directory. ex: `-dir images`")
+	}
 
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("failed to read .env file: %+v", err)
