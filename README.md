@@ -1,11 +1,11 @@
-# figme-exporter
+# figma-exporter
 
-## 環境変数
+## Environment variable
 
 ### FigmaToken
 
-User Settings の `Personal access tokens` でトークン発行
+Issue tokens with `Personal access tokens` in User Settings
 
 ### ProjectID
 
-ttps://www.figma.com/file/{ProjectID} の値
+The value of `https://www.figma.com/file/{ProjectID}`
