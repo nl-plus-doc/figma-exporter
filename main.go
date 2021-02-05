@@ -84,6 +84,7 @@ func getTopNodes(projectID, token string) []FigmaNode {
 		log.Fatalf("failed to initialize http instance: %+v", err)
 	}
 	req.Header.Set("X-FIGMA-TOKEN", token)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("failed to http request: %+v", err)
@@ -94,6 +95,7 @@ func getTopNodes(projectID, token string) []FigmaNode {
 	if err != nil {
 		log.Fatalf("failed to io read dir: %+v", err)
 	}
+
 	var decoded FigmaFilesResponse
 	if err = json.Unmarshal(bodyText, &decoded); err != nil {
 		log.Fatalf("failed to json unmarshal: %+v", err)
@@ -112,6 +114,7 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 	params := url.Values{}
 	params.Set("ids", strings.Join(nodeIDs, ","))
 	params.Set("format", extension)
+
 	uri := filepath.Join(
 		host, version, "images", projectID,
 	)
@@ -123,6 +126,7 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 		log.Fatalf("failed to initialize http instance: %+v", err)
 	}
 	req.Header.Set("X-FIGMA-TOKEN", token)
+
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("failed to http request: %+v", err)
