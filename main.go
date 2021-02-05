@@ -81,20 +81,20 @@ func getTopNodes(projectId, token string) []FigmaNode {
 	client := new(http.Client)
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		log.Fatal("failed to initialize http instance: %+v", err)
+		log.Fatalf("failed to initialize http instance: %+v", err)
 	}
 	req.Header.Set("X-FIGMA-TOKEN", token)
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal("failed to http request: %+v", err)
+		log.Fatalf("failed to http request: %+v", err)
 	}
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("failed to io read dir: %+v", err)
+		log.Fatalf("failed to io read dir: %+v", err)
 	}
 	var decoded FigmaFilesResponse
 	if err = json.Unmarshal(bodyText, &decoded); err != nil {
-		log.Fatal("failed to json unmarshal: %+v", err)
+		log.Fatalf("failed to json unmarshal: %+v", err)
 	}
 
 	topNodes := make([]FigmaNode, 0)
@@ -118,22 +118,22 @@ func getExportedUrls(projectId string, token string, nodeIds []string) map[strin
 	client := new(http.Client)
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
-		log.Fatal("failed to initialize http instance: %+v", err)
+		log.Fatalf("failed to initialize http instance: %+v", err)
 	}
 	req.Header.Set("X-FIGMA-TOKEN", token)
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Fatal("failed to http request: %+v", err)
+		log.Fatalf("failed to http request: %+v", err)
 	}
 
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("failed to io read dir: %+v", err)
+		log.Fatalf("failed to io read dir: %+v", err)
 	}
 
 	var decoded ImagesResponse
 	if err = json.Unmarshal(bodyText, &decoded); err != nil {
-		log.Fatal("failed to json unmarshal: %+v", err)
+		log.Fatalf("failed to json unmarshal: %+v", err)
 	}
 
 	return decoded.Images
@@ -164,7 +164,7 @@ func main() {
 
 	fifos, err := ioutil.ReadDir(saveDir)
 	if err != nil {
-		log.Fatal("failed to io read dir: %+v", err)
+		log.Fatalf("failed to io read dir: %+v", err)
 	}
 
 	imageUrls := getExportedUrls(projectID, figmaToken, nodeIDs)
