@@ -175,7 +175,7 @@ func main() {
 
 		if nodeId, ok := nodeNameToNodeIdMap[pureFileName]; ok {
 			imageUrl := imageUrls[nodeId]
-			saveImage(imageUrl, pureFileName)
+			saveImage(imageUrl, pureFileName, saveDir)
 		}
 	}
 }
