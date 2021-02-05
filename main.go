@@ -22,13 +22,13 @@ const (
 	extension = "jpg"
 )
 
-// ImagesResponse - Figmaのレスポンス
+// ImagesResponse - Figma image response
 type ImagesResponse struct {
 	Images map[string]string `json:"images"`
 	Err    interface{}       `json:"err"`
 }
 
-// FigmaNode - FigmaのNode
+// FigmaNode - Figma node
 type FigmaNode struct {
 	ID               string      `json:"id"`
 	Name             string      `json:"name"`
@@ -39,7 +39,7 @@ type FigmaNode struct {
 	Children         []FigmaNode `json:"children"`
 }
 
-// FigmaFilesResponse - FigmaのFileのレスポンス
+// FigmaFilesResponse - Figma file response
 type FigmaFilesResponse struct {
 	Name          string                 `json:"name"`
 	Role          string                 `json:"role"`
