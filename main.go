@@ -30,7 +30,7 @@ type ImagesResponse struct {
 
 // FigmaNode - FigmaのNode
 type FigmaNode struct {
-	Id               string      `json:"id"`
+	ID               string      `json:"id"`
 	Name             string      `json:"name"`
 	Visible          bool        `json:"visible"`
 	Type             string      `json:"type"`
@@ -72,9 +72,9 @@ func saveImage(url, pureFileName, saveDir string) {
 	}
 }
 
-func getTopNodes(projectId, token string) []FigmaNode {
+func getTopNodes(projectID, token string) []FigmaNode {
 	uri := filepath.Join(
-		host, version, "files", projectId,
+		host, version, "files", projectID,
 	)
 	uri = "https://" + uri
 
@@ -108,12 +108,12 @@ func getTopNodes(projectId, token string) []FigmaNode {
 	return topNodes
 }
 
-func getExportedUrls(projectId string, token string, nodeIds []string) map[string]string {
+func getExportedUrls(projectID string, token string, nodeIDs []string) map[string]string {
 	params := url.Values{}
-	params.Set("ids", strings.Join(nodeIds, ","))
+	params.Set("ids", strings.Join(nodeIDs, ","))
 	params.Set("format", extension)
 	uri := filepath.Join(
-		host, version, "images", projectId,
+		host, version, "images", projectID,
 	)
 	uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
 
@@ -156,13 +156,13 @@ func main() {
 
 	topNodes := getTopNodes(projectID, figmaToken)
 
-	nodeNameToNodeIdMap := make(map[string]string)
-	nodeIdToNodeNameMap := make(map[string]string) // nodeID: frameName
+	nodeNameToNodeIDMap := make(map[string]string)
+	nodeIDToNodeNameMap := make(map[string]string) // nodeID: frameName
 	nodeIDs := make([]string, 0)
 	for _, node := range topNodes {
-		nodeNameToNodeIdMap[node.Name] = node.Id
-		nodeIdToNodeNameMap[node.Id] = node.Name
-		nodeIDs = append(nodeIDs, node.Id)
+		nodeNameToNodeIDMap[node.Name] = node.ID
+		nodeIDToNodeNameMap[node.ID] = node.Name
+		nodeIDs = append(nodeIDs, node.ID)
 	}
 
 	fifos, err := ioutil.ReadDir(saveDir)
@@ -179,8 +179,8 @@ func main() {
 		splitFileName := strings.Split(fifo.Name(), ".")
 		pureFileName := strings.Join(splitFileName[:len(splitFileName)-1], ".")
 
-		if nodeId, ok := nodeNameToNodeIdMap[pureFileName]; ok {
-			imageUrl := imageUrls[nodeId]
+		if nodeID, ok := nodeNameToNodeIDMap[pureFileName]; ok {
+			imageUrl := imageUrls[nodeID]
 			saveImage(imageUrl, pureFileName, saveDir)
 		}
 	}
