@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -139,6 +140,10 @@ func getExportedUrls(projectId string, token string, nodeIds []string) map[strin
 }
 
 func main() {
+	var saveDir string
+	flag.StringVar(&saveDir, "dir", "images", "探索する画像ディレクトリ")
+	flag.Parse()
+
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("failed to read .env file: %+v", err)
 	}
@@ -156,8 +161,6 @@ func main() {
 		nodeIdToNodeNameMap[node.Id] = node.Name
 		nodeIDs = append(nodeIDs, node.Id)
 	}
-
-	saveDir := "images"
 
 	fifos, err := ioutil.ReadDir(saveDir)
 	if err != nil {
