@@ -103,9 +103,7 @@ func getTopNodes(projectID, token string) []FigmaNode {
 
 	topNodes := make([]FigmaNode, 0)
 	for _, canvas := range decoded.Document.Children {
-		for _, topNode := range canvas.Children {
-			topNodes = append(topNodes, topNode)
-		}
+		topNodes = append(topNodes, canvas.Children...)
 	}
 	return topNodes
 }
