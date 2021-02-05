@@ -88,6 +88,8 @@ func getTopNodes(projectId, token string) []FigmaNode {
 	if err != nil {
 		log.Fatalf("failed to http request: %+v", err)
 	}
+	defer resp.Body.Close()
+
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalf("failed to io read dir: %+v", err)
@@ -125,6 +127,7 @@ func getExportedUrls(projectId string, token string, nodeIds []string) map[strin
 	if err != nil {
 		log.Fatalf("failed to http request: %+v", err)
 	}
+	defer resp.Body.Close()
 
 	bodyText, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
