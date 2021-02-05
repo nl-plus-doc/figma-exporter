@@ -162,11 +162,11 @@ func main() {
 
 	nodeNameToNodeIDMap := make(map[string]string)
 	nodeIDToNodeNameMap := make(map[string]string) // nodeID: frameName
-	nodeIDs := make([]string, 0)
-	for _, node := range topNodes {
+	nodeIDs := make([]string, len(topNodes))
+	for i, node := range topNodes {
 		nodeNameToNodeIDMap[node.Name] = node.ID
 		nodeIDToNodeNameMap[node.ID] = node.Name
-		nodeIDs = append(nodeIDs, node.ID)
+		nodeIDs[i] = node.ID
 	}
 
 	fifos, err := ioutil.ReadDir(saveDir)
