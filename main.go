@@ -44,7 +44,7 @@ type FigmaFilesResponse struct {
 	Name          string                 `json:"name"`
 	Role          string                 `json:"role"`
 	LastModified  string                 `json:"lastModified"`
-	ThumbnailUrl  string                 `json:"thumbnailUrl"`
+	ThumbnailURL  string                 `json:"thumbnailUrl"`
 	Version       string                 `json:"version"`
 	Document      FigmaNode              `json:"document"`
 	Components    map[string]interface{} `json:"components"`
@@ -108,7 +108,7 @@ func getTopNodes(projectID, token string) []FigmaNode {
 	return topNodes
 }
 
-func getExportedUrls(projectID string, token string, nodeIDs []string) map[string]string {
+func getExportedURLs(projectID string, token string, nodeIDs []string) map[string]string {
 	params := url.Values{}
 	params.Set("ids", strings.Join(nodeIDs, ","))
 	params.Set("format", extension)
@@ -170,7 +170,7 @@ func main() {
 		log.Fatalf("failed to io read dir: %+v", err)
 	}
 
-	imageUrls := getExportedUrls(projectID, figmaToken, nodeIDs)
+	imageURLs := getExportedURLs(projectID, figmaToken, nodeIDs)
 
 	for _, fifo := range fifos {
 		if fifo.IsDir() {
@@ -180,8 +180,8 @@ func main() {
 		pureFileName := strings.Join(splitFileName[:len(splitFileName)-1], ".")
 
 		if nodeID, ok := nodeNameToNodeIDMap[pureFileName]; ok {
-			imageUrl := imageUrls[nodeID]
-			saveImage(imageUrl, pureFileName, saveDir)
+			imageURL := imageURLs[nodeID]
+			saveImage(imageURL, pureFileName, saveDir)
 		}
 	}
 }
