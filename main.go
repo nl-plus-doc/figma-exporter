@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/nl-plus-doc/figma-exporter/common"
 )
 
 const (
@@ -145,9 +146,26 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 }
 
 func main() {
-	var saveDir string
+	var (
+		saveDir         string
+		versionFlag     bool
+		updateCheckFlag bool
+	)
+
 	flag.StringVar(&saveDir, "dir", "", "image directory to search. ex: `-dir images`")
+	flag.BoolVar(&versionFlag, "v", false, "print version")
+	flag.BoolVar(&updateCheckFlag, "update-check", false, "check for updates")
 	flag.Parse()
+
+	if versionFlag {
+		fmt.Println(common.AppVersion)
+		return
+	}
+
+	if updateCheckFlag {
+		common.CheckUpdate()
+		return
+	}
 
 	if saveDir == "" {
 		log.Fatal("please specify a directory. ex: `-dir images`")
