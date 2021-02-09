@@ -9,8 +9,6 @@ builds:
     binary: figma-exporter
     ldflags:
       - -s -w
-      - -X main.Version={{.Version}}
-      - -X main.Revision={{.ShortCommit}}
       - -X github.com/nl-plus-doc/figma-exporter/common.AppVersion={{ .Version }}
     env:
       - CGO_ENABLED=0
