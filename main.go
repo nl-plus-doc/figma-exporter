@@ -175,8 +175,8 @@ func main() {
 		log.Fatalf("failed to read .env file: %+v", err)
 	}
 
-	projectID := os.Getenv("FIGMA_TOKEN")
-	figmaToken := os.Getenv("PROJECT_ID")
+	projectID := os.Getenv("PROJECT_ID")
+	figmaToken := os.Getenv("FIGMA_TOKEN")
 
 	topNodes := getTopNodes(projectID, figmaToken)
 
