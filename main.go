@@ -182,11 +182,9 @@ func main() {
 
 	nodeNameToNodeIDMap := make(map[string]string)
 	nodeIDToNodeNameMap := make(map[string]string) // nodeID: frameName
-	nodeIDs := make([]string, len(topNodes))
-	for i, node := range topNodes {
+	for _, node := range topNodes {
 		nodeNameToNodeIDMap[node.Name] = node.ID
 		nodeIDToNodeNameMap[node.ID] = node.Name
-		nodeIDs[i] = node.ID
 	}
 
 	fifos, err := ioutil.ReadDir(saveDir)
@@ -194,18 +192,23 @@ func main() {
 		log.Fatalf("failed to io read dir: %+v", err)
 	}
 
-	imageURLs := getExportedURLs(projectID, figmaToken, nodeIDs)
-
+	savedNodeIDs := make([]string, 0)
 	for _, fifo := range fifos {
 		if fifo.IsDir() {
 			continue
 		}
 		splitFileName := strings.Split(fifo.Name(), ".")
 		pureFileName := strings.Join(splitFileName[:len(splitFileName)-1], ".")
-
 		if nodeID, ok := nodeNameToNodeIDMap[pureFileName]; ok {
-			imageURL := imageURLs[nodeID]
-			saveImage(imageURL, pureFileName, saveDir)
+			savedNodeIDs = append(savedNodeIDs, nodeID)
 		}
+	}
+
+	imageURLs := getExportedURLs(projectID, figmaToken, savedNodeIDs)
+
+	for _, nodeID := range savedNodeIDs {
+		imageURL := imageURLs[nodeID]
+		fileName := nodeIDToNodeNameMap[nodeID]
+		saveImage(imageURL, fileName, saveDir)
 	}
 }
