@@ -131,7 +131,7 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 
 	nodeIdChunks := chunkBy(nodeIDs, 20)
 
-	urlMaps := make([]map[string]string, len(nodeIdChunks), len(nodeIdChunks))
+	urlMaps := make([]map[string]string, len(nodeIdChunks))
 
 	for _, chunk := range nodeIdChunks {
 		params := url.Values{}
