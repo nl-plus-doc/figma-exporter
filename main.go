@@ -143,14 +143,13 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 		)
 		uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
 
-		client := new(http.Client)
 		req, err := http.NewRequest("GET", uri, nil)
 		if err != nil {
 			log.Fatalf("failed to initialize http instance: %+v", err)
 		}
 		req.Header.Set("X-FIGMA-TOKEN", token)
 
-		resp, err := client.Do(req)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			log.Fatalf("failed to http request: %+v", err)
 		}
