@@ -255,9 +255,15 @@ func main() {
 
 	imageURLs := getExportedURLs(projectID, figmaToken, savedNodeIDs)
 
+	wg := new(sync.WaitGroup)
 	for _, nodeID := range savedNodeIDs {
+		wg.Add(1)
 		imageURL := imageURLs[nodeID]
 		fileName := nodeIDToNodeNameMap[nodeID]
-		saveImage(imageURL, fileName, saveDir)
+		go func() {
+			defer wg.Done()
+			saveImage(imageURL, fileName, saveDir)
+		}()
 	}
+	wg.Wait()
 }
