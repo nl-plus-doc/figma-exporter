@@ -187,7 +187,6 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 	}
 
 	wg.Wait()
-	fmt.Println(urlMaps)
 
 	mergedUrlMap := mergeMap(urlMaps)
 
