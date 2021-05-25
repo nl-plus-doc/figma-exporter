@@ -173,19 +173,21 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 	wg := new(sync.WaitGroup)
 	mu := new(sync.Mutex)
 
-	for _, chunk := range nodeIdChunks {
+	for i, chunk := range nodeIdChunks {
 		chunk := chunk
+		i := i
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			result := processRequest(projectID, token, chunk)
 			mu.Lock()
-			urlMaps = append(urlMaps, result)
+			urlMaps[i] = result
 			mu.Unlock()
 		}()
 	}
 
 	wg.Wait()
+	fmt.Println(urlMaps)
 
 	mergedUrlMap := mergeMap(urlMaps)
 
