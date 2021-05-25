@@ -109,40 +109,68 @@ func getTopNodes(projectID, token string) []FigmaNode {
 	return topNodes
 }
 
+func mergeMap(maps []map[string]string) map[string]string {
+	result := make(map[string]string)
+	for _, m := range maps {
+		for k, v := range m {
+			result[k] = v
+		}
+	}
+	return result
+}
+
+func chunkBy(items []string, chunkSize int) (chunks [][]string) {
+	for chunkSize < len(items) {
+		items, chunks = items[chunkSize:], append(chunks, items[0:chunkSize:chunkSize])
+	}
+
+	return append(chunks, items)
+}
+
 func getExportedURLs(projectID string, token string, nodeIDs []string) map[string]string {
-	params := url.Values{}
-	params.Set("ids", strings.Join(nodeIDs, ","))
-	params.Set("format", extension)
 
-	uri := filepath.Join(
-		host, version, "images", projectID,
-	)
-	uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
+	nodeIdChunks := chunkBy(nodeIDs, 20)
 
-	client := new(http.Client)
-	req, err := http.NewRequest("GET", uri, nil)
-	if err != nil {
-		log.Fatalf("failed to initialize http instance: %+v", err)
+	urlMaps := make([]map[string]string, len(nodeIdChunks))
+
+	for _, chunk := range nodeIdChunks {
+		params := url.Values{}
+		params.Set("ids", strings.Join(chunk, ","))
+		params.Set("format", extension)
+
+		uri := filepath.Join(
+			host, version, "images", projectID,
+		)
+		uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
+
+		req, err := http.NewRequest("GET", uri, nil)
+		if err != nil {
+			log.Fatalf("failed to initialize http instance: %+v", err)
+		}
+		req.Header.Set("X-FIGMA-TOKEN", token)
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Fatalf("failed to http request: %+v", err)
+		}
+		defer resp.Body.Close()
+
+		bodyText, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatalf("failed to io read dir: %+v", err)
+		}
+
+		var decoded ImagesResponse
+		if err = json.Unmarshal(bodyText, &decoded); err != nil {
+			log.Fatalf("failed to json unmarshal: %+v", err)
+		}
+
+		urlMaps = append(urlMaps, decoded.Images)
 	}
-	req.Header.Set("X-FIGMA-TOKEN", token)
 
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("failed to http request: %+v", err)
-	}
-	defer resp.Body.Close()
+	mergedUrlMap := mergeMap(urlMaps)
 
-	bodyText, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("failed to io read dir: %+v", err)
-	}
-
-	var decoded ImagesResponse
-	if err = json.Unmarshal(bodyText, &decoded); err != nil {
-		log.Fatalf("failed to json unmarshal: %+v", err)
-	}
-
-	return decoded.Images
+	return mergedUrlMap
 }
 
 func main() {
