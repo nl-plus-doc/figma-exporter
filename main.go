@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/joho/godotenv"
 	"github.com/nl-plus-doc/figma-exporter/common"
@@ -127,46 +128,65 @@ func chunkBy(items []string, chunkSize int) (chunks [][]string) {
 	return append(chunks, items)
 }
 
+func getUri(projectID string, nodeIDs []string) string {
+	params := url.Values{}
+	params.Set("ids", strings.Join(nodeIDs, ","))
+	params.Set("format", extension)
+
+	uri := filepath.Join(
+		host, version, "images", projectID,
+	)
+	uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
+	return uri
+}
+
+func processRequest(projectID string, token string, nodeIDs []string) map[string]string {
+	uri := getUri(projectID, nodeIDs)
+	req, err := http.NewRequest("GET", uri, nil)
+	if err != nil {
+		log.Fatalf("failed to initialize http instance: %+v", err)
+	}
+	req.Header.Set("X-FIGMA-TOKEN", token)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatalf("failed to http request: %+v", err)
+	}
+	defer resp.Body.Close()
+
+	bodyText, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("failed to io read dir: %+v", err)
+	}
+
+	var decoded ImagesResponse
+	if err = json.Unmarshal(bodyText, &decoded); err != nil {
+		log.Fatalf("failed to json unmarshal: %+v", err)
+	}
+	return decoded.Images
+}
+
 func getExportedURLs(projectID string, token string, nodeIDs []string) map[string]string {
 
 	nodeIdChunks := chunkBy(nodeIDs, 20)
-
 	urlMaps := make([]map[string]string, len(nodeIdChunks))
+	wg := new(sync.WaitGroup)
+	mu := new(sync.Mutex)
 
-	for _, chunk := range nodeIdChunks {
-		params := url.Values{}
-		params.Set("ids", strings.Join(chunk, ","))
-		params.Set("format", extension)
-
-		uri := filepath.Join(
-			host, version, "images", projectID,
-		)
-		uri = fmt.Sprintf("https://%s?%s", uri, params.Encode())
-
-		req, err := http.NewRequest("GET", uri, nil)
-		if err != nil {
-			log.Fatalf("failed to initialize http instance: %+v", err)
-		}
-		req.Header.Set("X-FIGMA-TOKEN", token)
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			log.Fatalf("failed to http request: %+v", err)
-		}
-		defer resp.Body.Close()
-
-		bodyText, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatalf("failed to io read dir: %+v", err)
-		}
-
-		var decoded ImagesResponse
-		if err = json.Unmarshal(bodyText, &decoded); err != nil {
-			log.Fatalf("failed to json unmarshal: %+v", err)
-		}
-
-		urlMaps = append(urlMaps, decoded.Images)
+	for i, chunk := range nodeIdChunks {
+		chunk := chunk
+		i := i
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			result := processRequest(projectID, token, chunk)
+			mu.Lock()
+			urlMaps[i] = result
+			mu.Unlock()
+		}()
 	}
+
+	wg.Wait()
 
 	mergedUrlMap := mergeMap(urlMaps)
 
@@ -234,9 +254,15 @@ func main() {
 
 	imageURLs := getExportedURLs(projectID, figmaToken, savedNodeIDs)
 
+	wg := new(sync.WaitGroup)
 	for _, nodeID := range savedNodeIDs {
+		wg.Add(1)
 		imageURL := imageURLs[nodeID]
 		fileName := nodeIDToNodeNameMap[nodeID]
-		saveImage(imageURL, fileName, saveDir)
+		go func() {
+			defer wg.Done()
+			saveImage(imageURL, fileName, saveDir)
+		}()
 	}
+	wg.Wait()
 }
