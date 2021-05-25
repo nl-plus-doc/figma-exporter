@@ -169,8 +169,9 @@ func processRequest(projectID string, token string, nodeIDs []string) map[string
 func getExportedURLs(projectID string, token string, nodeIDs []string) map[string]string {
 
 	nodeIdChunks := chunkBy(nodeIDs, 20)
-	resultChannel := make(chan map[string]string, len(nodeIdChunks))
+	urlMaps := make([]map[string]string, len(nodeIdChunks))
 	wg := new(sync.WaitGroup)
+	mu := new(sync.Mutex)
 
 	for _, chunk := range nodeIdChunks {
 		chunk := chunk
@@ -178,17 +179,14 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 		go func() {
 			defer wg.Done()
 			result := processRequest(projectID, token, chunk)
-			resultChannel <- result
+			mu.Lock()
+			urlMaps = append(urlMaps, result)
+			mu.Unlock()
 		}()
 	}
 
 	wg.Wait()
-	close(resultChannel)
 
-	urlMaps := make([]map[string]string, len(nodeIdChunks))
-	for urlMap := range resultChannel {
-		urlMaps = append(urlMaps, urlMap)
-	}
 	mergedUrlMap := mergeMap(urlMaps)
 
 	return mergedUrlMap
