@@ -27,6 +27,9 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
+    file:
+      - README.md
+      - .env-sample
 
 release:
   prerelease: auto
