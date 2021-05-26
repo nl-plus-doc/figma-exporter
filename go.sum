@@ -1,2 +1,4 @@
+github.com/go-utils/cont v0.1.2 h1:ynFzZJ7rZVySN9P4IGBOjmLt7knlUcdDLY9Q9Dl3nzg=
+github.com/go-utils/cont v0.1.2/go.mod h1:zXQ9kh3mb8Bydc0Ce+12tHwn/cb/+zL8twUeOs4E+eA=
 github.com/joho/godotenv v1.3.0 h1:Zjp+RcGpHhGlrMbJzXTrZZPrWj+1vfm90La1wgB6Bhc=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=

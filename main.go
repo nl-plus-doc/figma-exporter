@@ -14,15 +14,17 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/go-utils/cont"
 	"github.com/joho/godotenv"
 	"github.com/nl-plus-doc/figma-exporter/common"
 )
 
 const (
-	host      = "api.figma.com"
-	version   = "v1"
-	extension = "jpg"
+	host    = "api.figma.com"
+	version = "v1"
 )
+
+var extensions = [3]string{"jpg", "png", "svg"}
 
 // ImagesResponse - Figma image response
 type ImagesResponse struct {
@@ -54,7 +56,7 @@ type FigmaFilesResponse struct {
 	Styles        map[string]interface{} `json:"styles"`
 }
 
-func saveImage(url, pureFileName, saveDir string) {
+func saveImage(url, pureFileName, saveDir, extension string) {
 	response, err := http.Get(url)
 	if err != nil {
 		log.Fatalf("failed to http get request: %+v", err)
@@ -128,7 +130,7 @@ func chunkBy(items []string, chunkSize int) (chunks [][]string) {
 	return append(chunks, items)
 }
 
-func getUri(projectID string, nodeIDs []string) string {
+func getUri(projectID string, nodeIDs []string, extension string) string {
 	params := url.Values{}
 	params.Set("ids", strings.Join(nodeIDs, ","))
 	params.Set("format", extension)
@@ -140,8 +142,8 @@ func getUri(projectID string, nodeIDs []string) string {
 	return uri
 }
 
-func processRequest(projectID string, token string, nodeIDs []string) map[string]string {
-	uri := getUri(projectID, nodeIDs)
+func processRequest(projectID string, token string, nodeIDs []string, extension string) map[string]string {
+	uri := getUri(projectID, nodeIDs, extension)
 	req, err := http.NewRequest("GET", uri, nil)
 	if err != nil {
 		log.Fatalf("failed to initialize http instance: %+v", err)
@@ -166,7 +168,7 @@ func processRequest(projectID string, token string, nodeIDs []string) map[string
 	return decoded.Images
 }
 
-func getExportedURLs(projectID string, token string, nodeIDs []string) map[string]string {
+func getExportedURLs(projectID string, token string, nodeIDs []string, extension string) map[string]string {
 
 	nodeIdChunks := chunkBy(nodeIDs, 20)
 	urlMaps := make([]map[string]string, len(nodeIdChunks))
@@ -179,7 +181,7 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			result := processRequest(projectID, token, chunk)
+			result := processRequest(projectID, token, chunk, extension)
 			mu.Lock()
 			urlMaps[i] = result
 			mu.Unlock()
@@ -196,13 +198,17 @@ func getExportedURLs(projectID string, token string, nodeIDs []string) map[strin
 func main() {
 	var (
 		saveDir         string
+		extension       string
 		versionFlag     bool
 		updateCheckFlag bool
+		formatListFlag  bool
 	)
 
-	flag.StringVar(&saveDir, "dir", "", "image directory to search. ex: `-dir images`")
+	flag.StringVar(&saveDir, "dir", "", "image directory to search.\nex: `-dir images`")
+	flag.StringVar(&extension, "format", "jpg", "Image format to export.\ndefault: jpg\nex: `-format jpg`")
 	flag.BoolVar(&versionFlag, "v", false, "print version")
 	flag.BoolVar(&updateCheckFlag, "update-check", false, "check for updates")
+	flag.BoolVar(&formatListFlag, "format-list", false, "image format list")
 	flag.Parse()
 
 	if versionFlag {
@@ -215,8 +221,20 @@ func main() {
 		return
 	}
 
+	if formatListFlag {
+		fmt.Println("supported format:")
+		for _, extension := range extensions {
+			fmt.Println(extension)
+		}
+		return
+	}
+
 	if saveDir == "" {
 		log.Fatal("please specify a directory. ex: `-dir images`")
+	}
+
+	if !cont.Contains(extensions, extension) {
+		log.Fatalf("'%s' is unsupported format.", extension)
 	}
 
 	if err := godotenv.Load(); err != nil {
@@ -252,7 +270,7 @@ func main() {
 		}
 	}
 
-	imageURLs := getExportedURLs(projectID, figmaToken, savedNodeIDs)
+	imageURLs := getExportedURLs(projectID, figmaToken, savedNodeIDs, extension)
 
 	wg := new(sync.WaitGroup)
 	for _, nodeID := range savedNodeIDs {
@@ -261,7 +279,7 @@ func main() {
 		fileName := nodeIDToNodeNameMap[nodeID]
 		go func() {
 			defer wg.Done()
-			saveImage(imageURL, fileName, saveDir)
+			saveImage(imageURL, fileName, saveDir, extension)
 		}()
 	}
 	wg.Wait()
