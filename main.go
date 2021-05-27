@@ -76,7 +76,22 @@ func saveImage(url, pureFileName, saveDir, extension string) {
 	}
 }
 
-func getTopNodes(projectID, token string) []FigmaNode {
+func appendNodes(nodes []FigmaNode, depth int) []FigmaNode {
+	if depth == 0 {
+		return nodes
+	}
+
+	allNodes := make([]FigmaNode, len(nodes))
+	copy(allNodes, nodes)
+
+	for _, node := range nodes {
+		allNodes = append(allNodes, node.Children...)
+	}
+
+	return appendNodes(allNodes, depth-1)
+}
+
+func getNodes(projectID, token string, depth int) []FigmaNode {
 	uri := filepath.Join(
 		host, version, "files", projectID,
 	)
@@ -105,11 +120,7 @@ func getTopNodes(projectID, token string) []FigmaNode {
 		log.Fatalf("failed to json unmarshal: %+v", err)
 	}
 
-	topNodes := make([]FigmaNode, 0)
-	for _, canvas := range decoded.Document.Children {
-		topNodes = append(topNodes, canvas.Children...)
-	}
-	return topNodes
+	return appendNodes(decoded.Document.Children, depth)
 }
 
 func mergeMap(maps []map[string]string) map[string]string {
@@ -199,6 +210,7 @@ func main() {
 	var (
 		saveDir         string
 		extension       string
+		depth           int
 		versionFlag     bool
 		updateCheckFlag bool
 		formatListFlag  bool
@@ -206,6 +218,7 @@ func main() {
 
 	flag.StringVar(&saveDir, "dir", "", "image directory to search.\nex: `-dir images`")
 	flag.StringVar(&extension, "format", "jpg", "Image format to export.\ndefault: jpg\nex: `-format jpg`")
+	flag.IntVar(&depth, "depth", 1, "Depth of node to search.\ndefault: 1\nex: `-depth 1`")
 	flag.BoolVar(&versionFlag, "v", false, "print version")
 	flag.BoolVar(&updateCheckFlag, "update-check", false, "check for updates")
 	flag.BoolVar(&formatListFlag, "format-list", false, "image format list")
@@ -237,6 +250,10 @@ func main() {
 		log.Fatalf("'%s' is unsupported format.", extension)
 	}
 
+	if depth < 1 {
+		log.Fatal("Please set to 1 or more.")
+	}
+
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("failed to read .env file: %+v", err)
 	}
@@ -244,7 +261,7 @@ func main() {
 	projectID := os.Getenv("PROJECT_ID")
 	figmaToken := os.Getenv("FIGMA_TOKEN")
 
-	topNodes := getTopNodes(projectID, figmaToken)
+	topNodes := getNodes(projectID, figmaToken, depth)
 
 	nodeNameToNodeIDMap := make(map[string]string)
 	nodeIDToNodeNameMap := make(map[string]string) // nodeID: frameName
